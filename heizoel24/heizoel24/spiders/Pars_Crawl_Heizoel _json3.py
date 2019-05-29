@@ -44,12 +44,16 @@ class Pars_Crawl_Heizoel(scrapy.Spider):
         newlist=[]
         for ip in IPS_table:
             newlist.append(ip[0])
+        db_curs.close()
+        db_conn.close()
         return newlist
     def Load_Zipcodes(self):
         db_curs,db_conn = self.connection()
         query = """SELECT zip_zipcode FROM zipcode"""
         db_curs.execute(query)
         Zipcodes_table = db_curs.fetchall()
+        db_curs.close()
+        db_conn.close()
         return Zipcodes_table
     def AList_Request(self):
         db_curs,db_conn = self.connection()
@@ -211,7 +215,9 @@ class Pars_Crawl_Heizoel(scrapy.Spider):
         if failure.request.meta["crawl_type"] == 2 and  diff.seconds > 7200:#bigcrawl
             print("<problem> Error : consume more than TWO hour for big crawl")
             raise CloseSpider("code Error ::Too much time for crawling")
-
+        myip = failure.request.meta["proxy"]
+        myip = myip.replace("http://","")
+        self.ip_failed.append(myip)
         mymeta = failure.request.meta
         
         if failure.request.url == "https://www.heizoel24.de/":
@@ -322,7 +328,7 @@ class Pars_Crawl_Heizoel(scrapy.Spider):
             print("Have issue in update IP  ",e)
     def spider_closed(self, spider):
         print("########### lets Update IPs table ####################")
-        # self.Update_IPs(self.ip_failed)
+        self.Update_IPs(self.ip_failed)
         print("#############  update done ###########################")
         print(self.ip_failed)
         print("number of zipcodes DONE ::",len(self.zipcode_done))

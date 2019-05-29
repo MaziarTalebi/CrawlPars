@@ -45,6 +45,8 @@ class ParsCrawl_esyoil(scrapy.Spider):
         newlist=[]
         for ip in IPS_table:
             newlist.append(ip[0])
+        db_curs.close()
+        db_conn.close()
         return newlist
     def Load_Zipcodes(self):
         db_curs,db_conn = self.connection()
@@ -329,7 +331,7 @@ class ParsCrawl_esyoil(scrapy.Spider):
             print("<esyoilgotproblem>Have issue in update IP  ",e)
     def spider_closed(self, spider):
         print("########### lets Update IPs table ####################")
-        # self.Update_IPs(self.ip_failed)
+        self.Update_IPs(self.ip_failed)
         print("#############  update done ###########################")
         print(self.ip_failed)
         print("number of zipcodes DONE ::",len(self.zipcode_done))

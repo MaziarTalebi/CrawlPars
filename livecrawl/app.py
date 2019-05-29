@@ -59,6 +59,8 @@ def getBestPriceFromDB(zipcode):
     IPS_table = db_curs.fetchall()
     #print(IPS_table)
     minPrice = selectMinimumPriceFromTuple(IPS_table)
+    db_curs.close()
+    db_conn.close()
     return minPrice
     
 def connection():
