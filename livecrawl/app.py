@@ -1,10 +1,10 @@
-from flask import Flask,request
+from flask import Flask,request, render_template, url_for, redirect
 from subprocess import Popen
 from flask_ask import Ask, statement, question, session, context
 import requests
 import datetime
 import MySQLdb
-
+import os
 app = Flask(__name__)
 ask = Ask(app, "/")
 
@@ -19,6 +19,7 @@ def generateUrl():
     cmd = ['/usr/bin/python3', '/home/ubuntu/H_H/Crawl_Pars/fastenergy/fastenergy2/fastenergy.py']
     Popen(cmd)
     return 'generate url'
+
 @app.route('/livecrawl/<req>')
 def index(req):
 
@@ -33,6 +34,32 @@ def index(req):
     Popen(cmd_heizoel)
 
     return "okok"
+
+
+@app.route("/uploadip")
+def fileFrontPage():
+    return render_template('fileuploaderform.html')
+
+@app.route("/handleUpload", methods=['POST'])
+def handleFileUpload():
+    uploadedfile = request.files['uploadingfile']
+    fileNameInServer = ""
+    if 'uploadingfile' in request.files:
+        uploadedfile = request.files['uploadingfile']
+        if uploadedfile.filename != '' and  uploadedfile.filename.count('.') == 1 and '.txt' in uploadedfile.filename:# if there is name for the file and it is txt format            
+            fileNameInServer = str(datetime.datetime.now())  + uploadedfile.filename
+            uploadedfile.save(os.path.join('/home/ubuntu/H_H/Crawl_Pars/files',fileNameInServer))
+    try:
+        import sys
+        sys.path.append("../")
+        from Services.UploadIPS import startUpgradingProxies
+        if startUpgradingProxies('../files/' + fileNameInServer):
+            return redirect(url_for('fileFrontPage'))
+    except Exception as e:
+        return e
+
+
+
 @app.route('/alexacrawl/<zipcode>')
 def startAlexaCrawl(zipcode):
     print(zipcode)
