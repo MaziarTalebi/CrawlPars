@@ -58,7 +58,8 @@ class ParsCrawl_esyoil(scrapy.Spider):
         return Zipcodes_table
     def AList_Request(self):
         db_curs,db_conn = self.connection()
-        query = """SELECT * FROM requests_python WHERE LENGTH(rep_zipcode)>0"""
+        # query = """SELECT * FROM requests_python WHERE LENGTH(rep_zipcode)>0"""
+        query = """SELECT * FROM requests_python"""
         db_curs.execute(query)
         req = db_curs.fetchall()
         db_curs.close()
@@ -110,7 +111,7 @@ class ParsCrawl_esyoil(scrapy.Spider):
             start_at,end_at = self.table_time_setting(str(r[7]),str(r[8]))
             now = datetime.datetime.now()
             # now = now.replace(hour=7)
-            # now = now.replace(day=8,hour=4)
+            # now = now.replace(hour=4)
             # start_at = start_at.replace(day=8)
             # end_at = end_at.replace(day=8)
             if arg_repid == "hourly":
@@ -132,7 +133,6 @@ class ParsCrawl_esyoil(scrapy.Spider):
                     elif r[6] == 0:
                         # hourly crawl
                         self.crawl_list_jobs.append(r)
-                        print("let's do customized")
                         self.crawltype = 1
             elif "livecrawl" in arg_repid:
                 #live crawl
@@ -156,8 +156,8 @@ class ParsCrawl_esyoil(scrapy.Spider):
                 break
                 
         self.IPs = self.Load_IPs()
-        print("number of available IPs",len(self.IPs))
-        print("Let's start new crawl at ::",datetime.datetime.now())
+        print("number of available IPs are :: {}".format(len(self.IPs)))
+        print("Let's start new crawl at :: {}".format(datetime.datetime.now()))
 
     def start_requests(self):
         data = self.crawl_list_jobs
@@ -205,17 +205,17 @@ class ParsCrawl_esyoil(scrapy.Spider):
         myip = failure.request.meta["proxy"]
         myip = myip.replace("http://","")
         self.ip_failed.append(myip)
-        print("let's print the meta ::",failure.request.meta, "and number of fields in meta are:",len(failure.request.meta))
+        print(f"let's print the meta :: {failure.request.meta} and number of fields in meta are: {len(failure.request.meta)}")
         mymeta["proxy"] = 'http://' + random.choice(self.IPs)
         return scrapy.Request(url=failure.request.url, callback=self.parse, errback=self.errback_httpbin, meta=mymeta,dont_filter = True)
     def parse(self , response):
-        print("in parse",response.request.headers['User-Agent'])
-        print("dataloss is ::",response.request.meta.get("download_fail_on_dataloss"))
-        print("download latency  is ::",response.request.meta["download_latency"])
-        print("retry enable is ::",response.request.meta.get('dont_retry'))
-        print("size of html is::",len(str(response.text)))
-        print("length of xpath is::",len(response.xpath("//li[@class = 'pricelist-entry']")))
-        print("response status is::",response.status)
+        print("in parse {}".format(response.request.headers['User-Agent']))
+        print(f"dataloss is :: {response.request.meta.get('download_fail_on_dataloss')}")
+        print(f"download latency  is :: {response.request.meta['download_latency']}")
+        print(f"retry enable is ::{response.request.meta.get('dont_retry')}")
+        print(f"size of html is:: {len(str(response.text))}")
+        #print("length of xpath is::",len(response.xpath("//li[@class = 'pricelist-entry']")))
+        print(f"response status is:: {response.status}")
         if response.status == 200 and len(response.xpath("//li[@class = 'pricelist-entry']")) > 0:
             now = datetime.datetime.now()
             s = self.myspider_start_at
@@ -306,7 +306,7 @@ class ParsCrawl_esyoil(scrapy.Spider):
             print("Redirect happened,")
             # response.request.headers.setdefault('User-Agent', ua)
         else:
-            print("either status is not 200 or length of html is less and status and length are such as::",response.status,len(response.text))
+            print("either status is not 200 or length of html is less and status and length are such as:: {} , {}".format(response.status,len(response.text)))
             mymeta = response.meta
             mymeta["proxy"] = 'http://' + random.choice(self.IPs)
             # f = open(str(response.meta["hash"]) + ".txt",'w')
@@ -328,14 +328,14 @@ class ParsCrawl_esyoil(scrapy.Spider):
             db_curs.close()
             db_conn.close()
         except Exception as e:
-            print("<esyoilgotproblem>Have issue in update IP  ",e)
+            print("<esyoilgotproblem>Have issue in update IP  {}".format(e))
     def spider_closed(self, spider):
         print("########### lets Update IPs table ####################")
         self.Update_IPs(self.ip_failed)
         print("#############  update done ###########################")
         print(self.ip_failed)
-        print("number of zipcodes DONE ::",len(self.zipcode_done))
-        print("Number of failed IPs ::",len(self.ip_failed))
+        print(f"number of zipcodes DONE :: {len(self.zipcode_done)}")
+        print(f"Number of failed IPs :: {len(self.ip_failed)}")
 #        self.zipcode_done = []
         if len(self.zipcode_done) < len(self.crawl_list_jobs) :
             import sys
@@ -345,12 +345,12 @@ class ParsCrawl_esyoil(scrapy.Spider):
             sendObj.missingAllCrawl("esyoil",self.crawltype,len(self.zipcode_done),len(self.crawl_list_jobs))
             
         if len(self.zipcode_done) > 0 and self.crawltype == 3:
-            print("let's call PHP process in heizoel at time::",datetime.datetime.now())
+            print(f"let's call PHP process in heizoel at time:: {datetime.datetime.now()}")
             import requests
             r = requests.get("https://www.projektgesellschaft.de/jobs/job_12.php")
         else:
-            print("No zipcode done therefore cant call PHP process in heizoel at time::",datetime.datetime.now())
+            print("No zipcode done therefore cant call PHP process in heizoel at time:: {}".format(datetime.datetime.now()))
         diff = datetime.datetime.now() - self.myspider_start_at
-        print("total time consumed for esyoil::",diff.seconds)
+        print(f"total time consumed for esyoil:: {diff.seconds}")
         print(self.zipcode_failed)
-        print("Let's end the crawl crawl at ::",datetime.datetime.now())
+        print(f"Let's end the crawl crawl at :: {datetime.datetime.now()}")

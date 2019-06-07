@@ -34,8 +34,11 @@ def index(req):
     Popen(cmd_heizoel)
 
     return "okok"
-
-
+@app.route("/output/<myvar>")
+def output(myvar):
+    with open('myvar.txt','w') as f:
+        f.write(str(myvar))
+    return "ok"
 @app.route("/uploadip")
 def fileFrontPage():
     return render_template('fileuploaderform.html')
