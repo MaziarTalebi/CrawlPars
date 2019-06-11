@@ -14,10 +14,6 @@ class LetscheckSpider(scrapy.Spider):
                              db="crawler",
                              use_unicode=True,
                              charset='utf8')
-        db_curs=db_conn.cursor()
-        return db_curs,db_conn
-    def Load_IPs(self):
-        db_curs,db_conn = self.connection()
         query = """SELECT ip_name FROM ips where ip_status='1'"""
         db_curs.execute(query)
         IPS_table = db_curs.fetchall()
